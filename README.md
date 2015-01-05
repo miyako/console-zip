@@ -10,3 +10,12 @@ Similar functionality to the minizip program, but supports unicode file name and
 
 * libboost/1.57.0
 * libz/1.28
+
+```
+ -p string : password
+ -i string : input
+ -o string : output
+ -l number : compression level
+ -d : ignore dotfile
+ -v : verbose
+```
