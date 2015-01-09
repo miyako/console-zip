@@ -8,6 +8,8 @@
 #define OPT_IGNORE_DOTFILE  'd'
 #define OPT_VERBOSE         'v'
 
+#define OPT_LIST            "p:i:o:l:dv"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <getopt.h>

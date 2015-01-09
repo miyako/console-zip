@@ -11,12 +11,12 @@ extern int optind, opterr;
 
 static void usage(void){
     fprintf(stderr, "usage: zip [options]\n");
-    fprintf(stderr, " -%c string : %s\n", OPT_PASSWORD , "password"); 
-    fprintf(stderr, " -%c string : %s\n", OPT_INPUT , "input"); 
-    fprintf(stderr, " -%c string : %s\n", OPT_OUTPUT , "output");     
-    fprintf(stderr, " -%c number : %s\n", OPT_COMPRESS_LEVEL , "compression level"); 
-    fprintf(stderr, " -%c : %s\n", OPT_IGNORE_DOTFILE , "ignore dotfile");     
-    fprintf(stderr, " -%c : %s\n", OPT_VERBOSE , "verbose");   
+    fprintf(stderr, " -%c string: %s\n", OPT_PASSWORD , "password"); 
+    fprintf(stderr, " -%c string: %s\n", OPT_INPUT , "input"); 
+    fprintf(stderr, " -%c string: %s\n", OPT_OUTPUT , "output");     
+    fprintf(stderr, " -%c number: %s\n", OPT_COMPRESS_LEVEL , "compression level"); 
+    fprintf(stderr, " -%c: %s\n", OPT_IGNORE_DOTFILE , "ignore dotfile");     
+    fprintf(stderr, " -%c: %s\n", OPT_VERBOSE , "verbose");   
     
     exit(1);
 }
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     unsigned int ignore_dot = 0;
     unsigned int verbose = 0;
     
-    while ((ch = getopt(argc, argv, "p:i:o:l:dv")) != -1){
+    while ((ch = getopt(argc, argv, OPT_LIST)) != -1){
                 
         switch (ch){
                 case OPT_PASSWORD:
@@ -84,23 +84,34 @@ int main(int argc, char *argv[])
         strings paths;
         unsigned long CRC;    
         
+        std::wstring wfilename, wfilepath;
+        std::string filename, filepath, inputfilename;
+        
+#ifdef __WINDOWS__
+        std::wstring winputfilename(fs::path(input).filename().c_str());
+        wchar_to_utf8(winputfilename, inputfilename);
+#else
+        inputfilename = std::string(fs::path(input).filename().c_str());
+#endif 
+        
         if(fs::is_directory(input)){
             
             fs::recursive_directory_iterator last;
             for (fs::recursive_directory_iterator itr(input); itr != last; ++itr){
-                std::string filename, filepath;
+                
 #ifdef __WINDOWS__
-                std::wstring _filename(itr->path().filename().c_str());
-                std::wstring _filepath(itr->path().c_str());
-                wchar_to_utf8(_filename, filename);
-                wchar_to_utf8(_filepath, filepath);
+                wfilename = (itr->path().filename().c_str());
+                wfilepath = (itr->path().c_str());
+                wchar_to_utf8(wfilename, filename);
+                wchar_to_utf8(wfilepath, filepath);
 #else
-                filename = std::string(fs::path(relativePath).filename().c_str());
+                filename = std::string(itr->path().filename().c_str());
+                filepath = std::string(itr->path().c_str());
 #endif                           
                 if(fs::is_directory(itr->path())){
                     if(ignore_dot){
                         if(!(filename.at(0) == '.')){ 
-                            if(std::string(filepath).find("/.") == std::string::npos){
+                            if(filepath.find("/.") == std::string::npos){
                                 paths.push_back(filepath.append("/")); 
                             } 
                         }
@@ -120,9 +131,18 @@ int main(int argc, char *argv[])
                 }
             }
         }else{
-            std::cout << fs::path(input).filename();
+            if(ignore_dot){                
+                if(!(inputfilename.at(0) == '.')){ 
+                    if(input.find("/.") == std::string::npos){
+                        paths.push_back(input);    
+                    }
+                }
+            }else{
+                paths.push_back(input);
+            }
+            
         }  
-        
+
         zip_fileinfo zi;
         time_t currentTime;
         time(&currentTime);
@@ -140,9 +160,10 @@ int main(int argc, char *argv[])
         zi.internal_fa = zi.external_fa = 0;
     
         unsigned int len = input.length() + 1;
+
         for (unsigned int i = 0; i < paths.size(); ++i){
-        
-            std::string relativePath = paths.at(i).substr(len);
+           
+            std::string relativePath = (1 == paths.size()) ? inputfilename : paths.at(i).substr(len);
             std::string absoluetePath = paths.at(i);
             
             if(password.length()){
