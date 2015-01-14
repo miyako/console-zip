@@ -88,16 +88,20 @@ int main(int argc, char *argv[])
         std::string filename, filepath, inputfilename;
         
 #ifdef __WINDOWS__
-        std::wstring winputfilename(fs::path(input).filename().c_str());
+        std::wstring winputfilename;
+        utf8_to_wchar(input, winputfilename);
+        fs::path _input(winputfilename);
+        winputfilename = fs::path(winputfilename).filename().c_str();
         wchar_to_utf8(winputfilename, inputfilename);
 #else
         inputfilename = std::string(fs::path(input).filename().c_str());
+        fs:path _input(input);
 #endif 
         
-        if(fs::is_directory(input)){
+        if(fs::is_directory(_input)){
             
             fs::recursive_directory_iterator last;
-            for (fs::recursive_directory_iterator itr(input); itr != last; ++itr){
+            for (fs::recursive_directory_iterator itr(_input); itr != last; ++itr){
                 
 #ifdef __WINDOWS__
                 wfilename = (itr->path().filename().c_str());

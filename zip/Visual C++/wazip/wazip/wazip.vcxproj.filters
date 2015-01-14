@@ -8,7 +8,6 @@
     <ClCompile Include="..\..\..\zip\zip.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\zip\utf8.h" />
     <ClInclude Include="..\..\..\zip\crypt.h" />
     <ClInclude Include="..\..\..\zip\ioapi.h" />
     <ClInclude Include="..\include\getopt.h" />
