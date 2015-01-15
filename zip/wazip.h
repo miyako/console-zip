@@ -25,8 +25,11 @@
 #ifndef __APPLE__
 #define __WINDOWS__
 #include <string>
-int wchar_to_utf8(std::wstring &wstr, std::string &str);
-int utf8_to_wchar(std::string &str, std::wstring &wstr);
+#include <vector>
+#ifndef strings
+typedef std::vector<std::string> strings;
+#endif
+void get_subpaths(std::string &path, std::string &inputfilename, strings *paths, strings *posix_paths, int ignore_dot);
 #endif
 #endif
 

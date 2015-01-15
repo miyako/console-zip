@@ -2,9 +2,10 @@
 
 #include <iostream>
 #include <fstream>
+#ifndef __WINDOWS__ 
 #include <boost/filesystem.hpp>
-
 namespace fs = boost::filesystem;
+#endif
 
 extern char *optarg;
 extern int optind, opterr;
@@ -84,34 +85,19 @@ int main(int argc, char *argv[])
         strings paths;
         unsigned long CRC;    
         
-        std::wstring wfilename, wfilepath;
         std::string filename, filepath, inputfilename;
-        
-#ifdef __WINDOWS__
-        std::wstring winputfilename;
-        utf8_to_wchar(input, winputfilename);
-        fs::path _input(winputfilename);
-        winputfilename = fs::path(winputfilename).filename().c_str();
-        wchar_to_utf8(winputfilename, inputfilename);
-#else
+ 
+#ifndef __WINDOWS__        
         inputfilename = std::string(fs::path(input).filename().c_str());
-        fs:path _input(input);
-#endif 
-        
-        if(fs::is_directory(_input)){
+ 
+        if(fs::is_directory(input)){
             
             fs::recursive_directory_iterator last;
-            for (fs::recursive_directory_iterator itr(_input); itr != last; ++itr){
+            for (fs::recursive_directory_iterator itr(input); itr != last; ++itr){
                 
-#ifdef __WINDOWS__
-                wfilename = (itr->path().filename().c_str());
-                wfilepath = (itr->path().c_str());
-                wchar_to_utf8(wfilename, filename);
-                wchar_to_utf8(wfilepath, filepath);
-#else
                 filename = std::string(itr->path().filename().c_str());
                 filepath = std::string(itr->path().c_str());
-#endif                           
+                           
                 if(fs::is_directory(itr->path())){
                     if(ignore_dot){
                         if(!(filename.at(0) == '.')){ 
@@ -146,6 +132,10 @@ int main(int argc, char *argv[])
             }
             
         }  
+#else
+        strings posix_paths;
+        get_subpaths(input, inputfilename, &paths, &posix_paths, ignore_dot);        
+#endif        
 
         zip_fileinfo zi;
         time_t currentTime;
@@ -166,15 +156,19 @@ int main(int argc, char *argv[])
         unsigned int len = input.length() + 1;
 
         for (unsigned int i = 0; i < paths.size(); ++i){
-           
+ 
+#ifdef __WINDOWS__  
+            std::string relativePath = (1 == paths.size()) ? inputfilename : posix_paths.at(i);
+#else
             std::string relativePath = (1 == paths.size()) ? inputfilename : paths.at(i).substr(len);
+#endif
             std::string absoluetePath = paths.at(i);
             
             if(password.length()){
                 CRC = crc32(0L, Z_NULL, 0);
                 std::ifstream ifs_crc(absoluetePath.c_str(), std::ios::in|std::ios::binary);
                 if(ifs_crc.is_open()){
-                    std::vector<uint8_t> buf(BUFFER_SIZE);
+                    std::vector<char> buf(BUFFER_SIZE);
                     while(ifs_crc.good()){
                         ifs_crc.read((char *)&buf[0], BUFFER_SIZE);
                         CRC = crc32(CRC, (const Bytef *)&buf[0], ifs_crc.gcount());
@@ -219,7 +213,7 @@ int main(int argc, char *argv[])
             
             if(ifs.is_open()){
                 
-                std::vector<uint8_t> buf(BUFFER_SIZE);
+                std::vector<char> buf(BUFFER_SIZE);
                 
                 while(ifs.good()){
                     
